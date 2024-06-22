@@ -147,6 +147,52 @@ const orderController = {
         } catch (error) {
             res.status(500).json({ message: error.message });
         }
+    },
+    getOrderByStatus: async (req, res) => {
+        try {
+            const orders = await Order.find({ status: req.params.status }).lean();
+
+            const ordersWithUserDetails = await Promise.all(orders.map(async (order) => {
+                const user = await User.findOne({ MaND: order.userId });
+                if (user) {
+                    order.TenND = user.TenND;
+                    order.Avatar = user.Avatar;
+                } else {
+                    // Handle case where user is not found
+                    order.TenND = 'Unknown';
+                    order.Avatar = ''; // Provide a default image if necessary
+                }
+                return order;
+            }));
+
+            res.json(ordersWithUserDetails);
+        } catch (error) {
+            res.status(500).json({ message: error.message });
+        }
+    },
+    checkDeliveredProduct: async (req, res) => {
+        const { userId, productId } = req.body;
+
+        if (!userId || !productId) {
+            return res.status(400).json({ message: 'userId and productId are required' });
+        }
+
+        try {
+            const order = await Order.findOne({
+                userId: userId,
+                status: 'Delivered',
+                'products.productId': productId
+            });
+
+            if (order) {
+                return res.status(200).json({ message: 'User has purchased this product and it is delivered', delivered: true });
+            } else {
+                return res.status(200).json({ message: 'User has not purchased this product or it is not delivered', delivered: false });
+            }
+        } catch (error) {
+            console.error('Error checking delivered status:', error);
+            return res.status(500).json({ message: 'Internal server error' });
+        }
     }
 }
 

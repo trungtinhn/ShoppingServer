@@ -122,26 +122,40 @@ const productController = {
     checkAvailable: async (req, res) => {
         try {
             const products = req.body; // Danh sách sản phẩm cần kiểm tra
-            console.log(req.body);
     
             const productAvailability = await Promise.all(products.map(async (item) => {
-                const product = await Product.findOne({
-                    _id: item.productId,
-                    'Type.size': item.size,
-                    'Type.color': item.color
-                });
-    
+                // Truy vấn tìm sản phẩm với productId
+                const product = await Product.findOne({ _id: item.productId });
+              
+                // Nếu không tìm thấy sản phẩm, trả về kết quả là không khả dụng
                 if (!product) {
-                    return { productId: item.productId, available: false, message: 'Product not found' };
+                  return { productId: item.productId, available: false, message: 'Product not found' };
                 }
-    
-                const type = product.Type.find(t => t.size === item.size && t.color === item.color);
+              
+                // Tìm mã màu từ mảng MauSac dựa trên tên màu
+                const mauSac = product.MauSac.find(m => m.name === item.color);
+                if (!mauSac) {
+                  return { productId: item.productId, available: false, message: 'Color not found' };
+                }
+              
+                const colorCode = mauSac.code;
+              
+                // Tìm type cụ thể trong sản phẩm với size và mã màu phù hợp
+                const type = product.Type.find(t => t.size === item.size && t.color === colorCode);
+              
+                // Nếu không tìm thấy type, trả về kết quả là không khả dụng
+                if (!type) {
+                  return { productId: item.productId, available: false, message: 'Product type not found' };
+                }
+              
+                // Kiểm tra số lượng tồn kho của sản phẩm
                 if (type.quantity >= item.quantity) {
-                    return { productId: item.productId, available: true, quantityAvailable: type.quantity };
+                  return { productId: item.productId, available: true, quantityAvailable: type.quantity };
                 } else {
-                    return { productId: item.productId, available: false, quantityAvailable: type.quantity };
+                  return { productId: item.productId, available: false, quantityAvailable: type.quantity };
                 }
-            }));
+              }));
+              
     
             res.status(200).json(productAvailability);
         } catch (error) {

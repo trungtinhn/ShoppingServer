@@ -55,7 +55,6 @@ const reviewController = {
                 return review;
             }));
             
-            console.log(reviewsWithUserDetails);
             res.status(200).json(reviewsWithUserDetails);
         } catch (error) {
             res.status(500).json({ message: 'Failed to get review!', error });

@@ -64,7 +64,6 @@ const knnRecommend = {
         const notPurchasedProducts = allProducts.filter(product =>
           !purchasedProducts.some(p => p._id.equals(product._id))
         );
-        console.log(notPurchasedProducts);
 
         const distances = notPurchasedProducts.map(product => {
           const minDistance = Math.min(

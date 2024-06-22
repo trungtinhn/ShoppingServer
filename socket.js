@@ -35,6 +35,15 @@ const socketSetup = (server) => {
       io.emit("receiveMessage", savedMessage);
     });
 
+    socket.on('messageSeen', async ({ messageId }) => {
+    try {
+      await Message.findByIdAndUpdate(messageId, { isSeen: true });
+      io.emit('messageSeen', { messageId }); // Broadcast to all clients that the message has been seen
+    } catch (error) {
+      console.error("Error updating message status:", error);
+    }
+  });
+
     socket.on("disconnect", () => {
       console.log("user disconnected");
     });
